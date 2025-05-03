@@ -3,7 +3,7 @@ from tensorflow.keras.models import load_model
 import numpy as np
 from PIL import Image
 import cv2
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, WebRtcMode
 import os
 import av
 
@@ -103,5 +103,14 @@ elif option == "Use Camera":
     webrtc_streamer(
         key="yoga-pose-detection",
         video_processor_factory=YogaPoseDetector,
-        media_stream_constraints={"video": True, "audio": False},
+        media_stream_constraints={
+            "video": {
+                "width": {"ideal": 1280},
+                "height": {"ideal": 720},
+                "frameRate": {"ideal": 30},
+            },
+            "audio": False,
+        },
+        mode=WebRtcMode.SENDRECV,  # Ensure two-way communication
+        async_processing=True,     # Enable async processing
     )

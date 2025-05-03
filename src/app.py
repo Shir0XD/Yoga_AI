@@ -5,6 +5,7 @@ from PIL import Image
 import cv2
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 import os
+import av
 
 # Set Streamlit page configuration
 st.set_page_config(
@@ -36,12 +37,8 @@ class YogaPoseDetector(VideoTransformerBase):
         self.model = model
         self.classes = classes
 
-    def transform(self, frame):
+    def recv(self, frame):
         try:
-            # Check if frame is valid
-            if frame is None:
-                raise ValueError("Frame is None. Ensure the video stream is working correctly.")
-
             # Convert the frame to a PIL image
             img = Image.fromarray(frame.to_ndarray(format="bgr24"))
 
@@ -64,9 +61,9 @@ class YogaPoseDetector(VideoTransformerBase):
                 2,
                 cv2.LINE_AA,
             )
-            return frame
+            return av.VideoFrame.from_ndarray(frame, format="bgr24")
         except Exception as e:
-            print(f"Error in transform: {e}")
+            print(f"Error in recv: {e}")
             return frame  # Return the original frame if an error occurs
 
 # Streamlit App
@@ -105,6 +102,6 @@ elif option == "Use Camera":
     # Start the webcam and detect poses
     webrtc_streamer(
         key="yoga-pose-detection",
-        video_transformer_factory=YogaPoseDetector,
+        video_processor_factory=YogaPoseDetector,
         media_stream_constraints={"video": True, "audio": False},
     )

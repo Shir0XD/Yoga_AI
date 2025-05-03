@@ -13,11 +13,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+# Verify the model file exists
+if not os.path.exists('models/model.keras'):
+    raise FileNotFoundError("Model file not found. Ensure 'models/model.keras' exists in the project directory.")
+
 # Load the trained model
-model = load_model('C:/Users/Shishir/OneDrive/Documents/Yoga_AI/image-classification-ai/models/model.keras')
+model = load_model('models/model.keras')
 
 # Define the classes based on folder names in the training directory
-classes = sorted(os.listdir(r'C:\Users\Shishir\OneDrive\Documents\Yoga_AI\image-classification-ai\data\train')) 
+classes = sorted(os.listdir('data/train'))
 
 def preprocess_image(image):
     """
@@ -33,29 +37,37 @@ class YogaPoseDetector(VideoTransformerBase):
         self.classes = classes
 
     def transform(self, frame):
-        # Convert the frame to a PIL image
-        img = Image.fromarray(frame.to_ndarray(format="bgr24"))
+        try:
+            # Check if frame is valid
+            if frame is None:
+                raise ValueError("Frame is None. Ensure the video stream is working correctly.")
 
-        # Preprocess the image
-        processed_image = preprocess_image(img)
+            # Convert the frame to a PIL image
+            img = Image.fromarray(frame.to_ndarray(format="bgr24"))
 
-        # Make prediction
-        predictions = self.model.predict(processed_image)
-        predicted_class = self.classes[np.argmax(predictions)]
+            # Preprocess the image
+            processed_image = preprocess_image(img)
 
-        # Add the predicted class to the frame
-        frame = frame.to_ndarray(format="bgr24")
-        cv2.putText(
-            frame,
-            f"Pose: {predicted_class}",
-            (10, 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0, 255, 0),
-            2,
-            cv2.LINE_AA,
-        )
-        return frame
+            # Make prediction
+            predictions = self.model.predict(processed_image)
+            predicted_class = self.classes[np.argmax(predictions)]
+
+            # Add the predicted class to the frame
+            frame = frame.to_ndarray(format="bgr24")
+            cv2.putText(
+                frame,
+                f"Pose: {predicted_class}",
+                (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2,
+                cv2.LINE_AA,
+            )
+            return frame
+        except Exception as e:
+            print(f"Error in transform: {e}")
+            return frame  # Return the original frame if an error occurs
 
 # Streamlit App
 st.title("Yoga Pose Classification")
